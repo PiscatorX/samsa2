@@ -1,6 +1,6 @@
 #!/usr/bin/env nextflow
 
-SAMSA			= "/home/drewx/Documents/samsa2/"
+SAMSA			= "/home/drewx/Documents/samsa2"
 params.INPUT_DIR	= "/home/drewx/Documents/samsa2/sample_files_paired-end/1_starting_files/*_R{1,2}.fastq"
 params.OUT_DIR		= "${PWD}/samsa2Out"
 OUT_DIR                 = params.OUT_DIR
@@ -130,8 +130,8 @@ process  sortmerna{
     output:
 	file("*.ribosomes.fastq*") into ribosomes
         file("${pair_id}.ribosomes.log") into  sortmerna_log
-        file("${pair_id}.fastq") into metatranscriptome_reads
-        val  pair_id   
+        file("${pair_id}.fastq") into (metatranscriptome_reads1, metatranscriptome_reads2)
+        val  pair_id into (pair_id1, pair_id2)  
 
 """
 
@@ -151,16 +151,16 @@ process  sortmerna{
 
 
 
-process diamond{
+process diamond_Refseq{
 
     //echo true
     cpus params.ltp_cores
     memory "${params.m_mem} GB"
-    publishDir path: "${OUT_DIR}/diamond", mode: 'copy'
+    publishDir path: "${OUT_DIR}/diamond_refseq", mode: 'copy'
     input:
-	file(query_seqs) from metatranscriptome_reads
+	file(query_seqs) from metatranscriptome_reads1
         val  diamond_refseq
-        val  pair_id
+        val  pair_id from pair_id1
 
 
    output:
@@ -190,108 +190,84 @@ process diamond{
 }
 
 
+process diamond_subsys{
+
+    //echo true
+    cpus params.ltp_cores
+    memory "${params.m_mem} GB"
+    publishDir path: "${OUT_DIR}/diamond_subsys", mode: 'copy'
+    input:
+	file(query_seqs) from metatranscriptome_reads2
+        val diamond_subsys_db  
+        val  pair_id from pair_id2
+
+
+   output:
+        file("${pair_id}.daa") into subsys_daa
+	file("${pair_id}.tab") into subsys_tab
+    
+
+"""
+ 
+    diamond \
+    blastx \
+    -d ${diamond_subsys_db}  \
+    -q ${query_seqs} \
+    -a ${pair_id}.daa \
+    --max-target-seqs 1 \
+    --verbose
+
+    diamond \
+    view \
+    --daa ${pair_id}.daa \
+    -o ${pair_id}.tab \
+    -f tab    
+
+"""
+    
+   
+}
+
+
+
 process analysis_counter{
 
     echo true
     input:
        file refseq_results from refseq_tab
+       val RefSeq_db   
 
-
-
+    output:
+        file("*organism.tsv") into refseq_org_results
+	file("*function.tsv") into refseq_func_results
 
 """
    
-   DIAMOND_analysis_counter.py -I ${refseq_results} -D $RefSeq_db -O
-   DIAMOND_analysis_counter.py -I ${refseq_results} -D $RefSeq_db -F
-   tree
+   DIAMOND_analysis_counter.py -I ${refseq_results} -D ${RefSeq_db} -O
+   DIAMOND_analysis_counter.py -I ${refseq_results} -D ${RefSeq_db} -F
  
 """
 
 }
 
 
+process analysis_counter_subsys{
 
+    echo true
+    input:
+       file subsys_results from subsys_tab
+       val Subsys_db   
 
+    output:
+        file("*organism.tsv") into sub_sys_org_results
+	file("*function.tsv") into sub_sys_func_results
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//daa = Channel.fromPath("/home/drewx/Documents/SAMSA-TEST/samsa2/output_test/step_4_output_test/daa_binary_files/*.daa")
-
-
-
-
-
-// process diamond{
-
-//     maxForks 1
-//     echo true
-//     input:
-
-//         file(daa_file) from daa
-// 	//file(query_seqs) from metatranscriptome_reads.flatten()
-//         //val  diamond_db
-//         //val  pair_id
-    
-
-// """
-
+"""
    
-//     diamond \
-//     view \
-//     --daa ${daa_file} \
-//     -o ${daa_file}.tab \
-//     -f tab    
+   DIAMOND_analysis_counter.py -I ${subsys_results} -D ${Subsys_db} -O
+   DIAMOND_analysis_counter.py -I ${subsys_results} -D ${Subsys_db} -F
+   
  
-// """
-    
-   
-// }
+"""
 
-
-
-// echo diamond \
-// blastx \
-// -d ${diamond_db}  \
-// -q ${query_seqs} \
-// -a ${pair_id}.daa \
-// --block-size 0.1 \
-// --index-chunks 20 \
-// --max-target-seqs 1 \
-// --verbose
-
-// diamond \
-// blastx \
-// -d ${diamond_db}  \
-// --un ${pair_id}.unaligned \
-// --al ${pair_id}.aligned \
-// -q ${query_seqs} \
-// -a ${pair_id}.daa \
-// -f ${params.outformat}  \
-// --more-sensitive \
-// --frameshift 15 \
-// --max-target-seqs 1 \
-// --verbose    
+}
