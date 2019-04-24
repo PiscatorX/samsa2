@@ -64,6 +64,7 @@ process trimmomatic{
 
 process raw_read_counter{
 
+    maxForks 1
     memory "${params.l_mem} GB"
     //echo true    
     input:
@@ -76,7 +77,7 @@ process raw_read_counter{
  
   raw_read_counter.py \
   -I ${trimm_fwd} \
-  -O ${OUT_DIR}/trimmomatic/raw_counts.txt
+  -O ${OUT_DIR}/raw_counts.txt
  
 """
 
@@ -233,18 +234,24 @@ process diamond_subsys{
 process analysis_counter{
 
     echo true
+    publishDir path: "${OUT_DIR}/RefSeq_results", mode: 'copy'
     input:
        file refseq_results from refseq_tab
        val RefSeq_db   
 
     output:
         file("*organism.tsv") into refseq_org_results
-	file("*function.tsv") into refseq_func_results
+        file("*function.tsv") into refseq_func_results
+
+    script:
+	outfile = refseq_results.getName().replaceFirst(/tab/, "stdout") 
+    
 
 """
-   
-   DIAMOND_analysis_counter.py -I ${refseq_results} -D ${RefSeq_db} -O
-   DIAMOND_analysis_counter.py -I ${refseq_results} -D ${RefSeq_db} -F
+   echo +++ $outfile
+   mkdir -pv ${OUT_DIR}/RefSeq_top_results
+   DIAMOND_analysis_counter.py -I ${refseq_results} -D ${RefSeq_db} -O > ${OUT_DIR}/RefSeq_top_results/orgnism_${outfile}  
+   DIAMOND_analysis_counter.py -I ${refseq_results} -D ${RefSeq_db} -F > ${OUT_DIR}/RefSeq_top_results/function_${outfile}
  
 """
 
@@ -254,20 +261,59 @@ process analysis_counter{
 process analysis_counter_subsys{
 
     echo true
+    publishDir path: "${OUT_DIR}/Subsys_results", mode: 'copy'
     input:
        file subsys_results from subsys_tab
        val Subsys_db   
 
     output:
-        file("*organism.tsv") into sub_sys_org_results
-	file("*function.tsv") into sub_sys_func_results
-
+	 file("*.reduced")  into sub_sys_reduced
+	 file("*.receipt") into sub_sys_receipt
+         file("*.hierarchy") into sub_sys_hierarchy
+    script:
+         outfile = subsys_results.getName().replaceFirst(/tab/, "stdout") 
+    
+    
+    
 """
    
-   DIAMOND_analysis_counter.py -I ${subsys_results} -D ${Subsys_db} -O
-   DIAMOND_analysis_counter.py -I ${subsys_results} -D ${Subsys_db} -F
+   mkdir -pv ${OUT_DIR}/Subsys_top_results
    
+   DIAMOND_subsystems_analysis_counter.py \
+   -I ${subsys_results} \
+   -D ${Subsys_db} \
+   -O ${subsys_results}.hierarchy \
+   -P ${subsys_results}.receipt > ${OUT_DIR}/Subsys_top_results/${outfile}
+
+   subsys_reducer.py \
+  -I ${subsys_results}.hierarchy   
  
 """
 
 }
+
+
+
+// process DESeq{
+    
+//     echo true
+//     input:
+// 	file(org_results) from refseq_org_results.collect()
+//         file(function) from refseq_func_results.collect()
+        
+        
+
+// """
+
+//   run_DESeq_stats.R \
+//   -I \$PWD \
+//   -O RefSeq_org_DESeq_results.tab \
+//   -R ${OUT_DIR}/raw_counts.txt
+ 
+
+// """
+// }
+
+
+
+  
