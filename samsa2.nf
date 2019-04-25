@@ -27,7 +27,7 @@ Channel.fromFilePairs(params.INPUT_DIR)
 process trimmomatic{
 
     //echo true
-    cpus params.htp_cores
+    cpus params.mtp_cores
     memory "${params.l_mem} GB"
     publishDir path: "${OUT_DIR}/trimmomatic", mode: 'copy'
     
@@ -65,6 +65,7 @@ process trimmomatic{
 process raw_read_counter{
 
     maxForks 1
+    cpus params.ltp_cores
     memory "${params.l_mem} GB"
     //echo true    
     input:
@@ -88,8 +89,8 @@ process raw_read_counter{
 
 process pear{
 	
-    cpus params.ltp_cores
-    memory "${params.l_mem} GB"
+    cpus params.mtp_cores
+    memory "${params.m_mem} GB"
     publishDir path: "${OUT_DIR}/pear/pair_id", mode: 'copy'
 
     input:
@@ -119,8 +120,8 @@ process pear{
 process  sortmerna{
 
     echo true
-    cpus params.ltp_cores
-    memory "${params.l_mem} GB"
+    cpus params.mtp_cores
+    memory "${params.m_mem} GB"
     publishDir path: "${OUT_DIR}/sortmerna", mode: 'copy'
     
     input:
@@ -155,8 +156,8 @@ process  sortmerna{
 process diamond_Refseq{
 
     //echo true
-    cpus params.ltp_cores
-    memory "${params.m_mem} GB"
+    cpus params.htp_cores
+    memory "${params.h_mem} GB"
     publishDir path: "${OUT_DIR}/diamond_refseq", mode: 'copy'
     input:
 	file(query_seqs) from metatranscriptome_reads1
@@ -194,8 +195,8 @@ process diamond_Refseq{
 process diamond_subsys{
 
     //echo true
-    cpus params.ltp_cores
-    memory "${params.m_mem} GB"
+    cpus params.htp_cores
+    memory "${params.h_mem} GB"
     publishDir path: "${OUT_DIR}/diamond_subsys", mode: 'copy'
     input:
 	file(query_seqs) from metatranscriptome_reads2
@@ -234,6 +235,7 @@ process diamond_subsys{
 process analysis_counter{
 
     echo true
+    
     publishDir path: "${OUT_DIR}/RefSeq_results", mode: 'copy'
     input:
        file refseq_results from refseq_tab
@@ -261,6 +263,8 @@ process analysis_counter{
 process analysis_counter_subsys{
 
     echo true
+    cpus params.ltp_cores
+    memory "${params.l_mem} GB"
     publishDir path: "${OUT_DIR}/Subsys_results", mode: 'copy'
     input:
        file subsys_results from subsys_tab
