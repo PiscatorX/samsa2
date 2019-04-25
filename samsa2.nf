@@ -1,21 +1,26 @@
 #!/usr/bin/env nextflow
 
-SAMSA			= "/home/drewx/Documents/samsa2"
-params.INPUT_DIR	= "/home/drewx/Documents/samsa2/sample_files_paired-end/1_starting_files/*_R{1,2}.fastq"
-params.OUT_DIR		= "${PWD}/samsa2Out"
+SAMSA                   = "/home/drewx/Documents/samsa2"
+params.INPUT_DIR        = "/home/drewx/Documents/samsa2/sample_files_paired-end/1_starting_files/*_R{1,2}.fastq"
+params.OUT_DIR          = "${PWD}/samsa2Out"
 OUT_DIR                 = params.OUT_DIR
-params.diamond_refseq	= "$SAMSA/setup_and_test/tiny_databases/RefSeq_bac_TINY_24MB"
-params.diamond_subsys_db= "$SAMSA/setup_and_test/tiny_databases/subsys_db_TINY_24MB"
-params.RefSeq_db	= "$SAMSA/setup_and_test/tiny_databases/RefSeq_bac_TINY_24MB.fa"
-params.Subsys_db	= "$SAMSA/setup_and_test/tiny_databases/subsys_db_TINY_24MB.fa"
-params.sortmerna_fasta 	= "/home/drewx/Documents/samsa2/programs/sortmerna-2.1/rRNA_databases/silva-bac-16s-id90.fasta"
+params.diamond_subsys_db=/projects/andhlovu/DB_REF/Subsys/subsys_db.dmnd
+params.Subsys_db        =/projects/andhlovu/DB_REF/Subsys/subsys_db.fa
+params.diamond_refseq   =/projects/andhlovu/DB_REF/RefSeq/RefSeq_bac.dmnd
+params.RefSeq_db        = /projects/andhlovu/DB_REF/RefSeq/RefSeq_bac.fa
+// params.diamond_refseq        = "$SAMSA/setup_and_test/tiny_databases/RefSeq_bac_TINY_24MB"
+// params.diamond_subsys_db= "$SAMSA/setup_and_test/tiny_databases/subsys_db_TINY_24MB"
+// params.RefSeq_db     = "$SAMSA/setup_and_test/tiny_databases/RefSeq_bac_TINY_24MB.fa"
+// params.Subsys_db     = "$SAMSA/setup_and_test/tiny_databases/subsys_db_TINY_24MB.fa"
+params.sortmerna_fasta  = "/home/drewx/Documents/samsa2/programs/sortmerna-2.1/rRNA_databases/silva-bac-16s-id90.fasta"
+params.sortmerna_fasta  = "/projects/andhlovu/DB_REF/SILVA/SILVA_132_SSURef_Nr99_tax_silva.fasta"
 params.sortmerna_index  = "/home/drewx/Documents/samsa2/programs/sortmerna-2.1/index/silva-bac-16s-db"
 sortmerna_fasta         =  Channel.value(params.sortmerna_fasta)
 sortmerna_index         =  Channel.value(params.sortmerna_index)
 diamond_refseq          =  Channel.value(params.diamond_refseq)
-diamond_subsys_db       =  Channel.value(params.diamond_subsys_db) 
-RefSeq_db	        =  Channel.value(params.RefSeq_db)	
-Subsys_db	        =  Channel.value(params.Subsys_db)	
+diamond_subsys_db       =  Channel.value(params.diamond_subsys_db)
+RefSeq_db               =  Channel.value(params.RefSeq_db)
+Subsys_db               =  Channel.value(params.Subsys_db)
 
 
 Channel.fromFilePairs(params.INPUT_DIR)
