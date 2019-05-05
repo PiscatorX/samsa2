@@ -1,7 +1,7 @@
 #!/usr/bin/env nextflow
 
 params.INPUT_DIR        = "/home/andhlovu/Novogene/ftpdata.novogene.cn:2300/C101HW18111065/raw_data/*_RNA_{1,2}.fq.gz" 
-params.OUT_DIR          = "${PWD}/samsa2Out"
+params.OUT_DIR          = "${PWD}/samsa2.Out"
 OUT_DIR                 = params.OUT_DIR
 params.diamond_subsys_db= "/projects/andhlovu/DB_REF/Subsys/subsys_db.dmnd"
 params.Subsys_db        = "/projects/andhlovu/DB_REF/Subsys/subsys_db.fa"
@@ -295,6 +295,7 @@ process analysis_counter_subsys{
 
    subsys_reducer.py \
   -I ${subsys_results}.hierarchy   
+
  
 """
 
