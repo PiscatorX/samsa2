@@ -1,7 +1,7 @@
 #!/usr/bin/env nextflow
 
 //params.INPUT_DIR        = "/home/andhlovu/Novogene/ftpdata.novogene.cn:2300/C101HW18111065/raw_data/*_RNA_{1,2}.fq.gz" 
-params.INPUT_DIR        =  "/home/drewx/Documents/samsa2/samsa2.Out/sortmerna/*.fastq"
+params.INPUT_DIR        =  "${PWD}/samsa2.Out/sortmerna/*.fastq"
 
 
 params.OUT_DIR          = "${PWD}/samsa2.Out"
