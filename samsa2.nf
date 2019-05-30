@@ -1,31 +1,41 @@
 #!/usr/bin/env nextflow
 
-params.INPUT_DIR        = "/home/andhlovu/Novogene/ftpdata.novogene.cn:2300/C101HW18111065/raw_data/*_RNA_{1,2}.fq.gz" 
+//params.INPUT_DIR        = "/home/andhlovu/Novogene/ftpdata.novogene.cn:2300/C101HW18111065/raw_data/*_RNA_{1,2}.fq.gz" 
+params.INPUT_DIR        =  "/home/drewx/Documents/samsa2/samsa2.Out/sortmerna/*.fastq"
+
+
 params.OUT_DIR          = "${PWD}/samsa2.Out"
 OUT_DIR                 = params.OUT_DIR
-params.diamond_subsys_db= "/projects/andhlovu/DB_REF/Subsys/subsys_db.dmnd"
-params.Subsys_db        = "/projects/andhlovu/DB_REF/Subsys/subsys_db.fa"
-params.diamond_refseq   = "/projects/andhlovu/DB_REF/RefSeq/RefSeq_bac.dmnd"
-params.RefSeq_db        = "/projects/andhlovu/DB_REF/RefSeq/RefSeq_bac.fa"
-// params.diamond_refseq= "$SAMSA/setup_and_test/tiny_databases/RefSeq_bac_TINY_24MB"
-// params.diamond_subsys_db= "$SAMSA/setup_and_test/tiny_databases/subsys_db_TINY_24MB"
-// params.RefSeq_db     = "$SAMSA/setup_and_test/tiny_databases/RefSeq_bac_TINY_24MB.fa"
-// params.Subsys_db     = "$SAMSA/setup_and_test/tiny_databases/subsys_db_TINY_24MB.fa"
-//params.sortmerna_fasta  = "/home/drewx/Documents/samsa2/programs/sortmerna-2.1/rRNA_databases/silva-bac-16s-id90.fasta"
-params.sortmerna_fasta  = "/projects/andhlovu/DB_REF/SILVA/SILVA_132_SSURef_Nr99_tax_silva.fasta"
-params.sortmerna_index  = "/projects/andhlovu/DB_REF/SortMeRNA/SILVA.idx"
+
+// params.diamond_subsys_db= "/projects/andhlovu/DB_REF/Subsys/subsys_db.dmnd"
+// params.Subsys_db        = "/projects/andhlovu/DB_REF/Subsys/subsys_db.fa"
+// params.diamond_refseq   = "/projects/andhlovu/DB_REF/RefSeq/RefSeq_bac.dmnd"
+// params.RefSeq_db        = "/projects/andhlovu/DB_REF/RefSeq/RefSeq_bac.fa"
+//params.sortmerna_fasta  = "/projects/andhlovu/DB_REF/SILVA/SILVA_132_SSURef_Nr99_tax_silva.fasta"
+//params.sortmerna_index  = "/projects/andhlovu/DB_REF/SortMeRNA/SILVA.idx"
+
+params.diamond_refseq	   = "/home/drewx/Documents/SAMSA-TEST/samsa2/setup_and_test/tiny_databases/RefSeq_bac_TINY_24MB"
+params.diamond_subsys_db   = "/home/drewx/Documents/SAMSA-TEST/samsa2/setup_and_test/tiny_databases/subsys_db_TINY_24MB"
+params.RefSeq_db 	   = "/home/drewx/Documents/SAMSA-TEST/samsa2/setup_and_test/tiny_databases/RefSeq_bac_TINY_24MB.fa"
+params.Subsys_db 	   = "/home/drewx/Documents/SAMSA-TEST/samsa2/setup_and_test/tiny_databases/subsys_db_TINY_24MB.fa"
+params.sortmerna_fasta     = "/home/drewx/Documents/samsa2/programs/sortmerna-2.1/rRNA_databases/silva-bac-16s-id90.fasta"
+params.sortmerna_index     = "/home/drewx/Documents/samsa2/programs/sortmerna-2.1/index/silva-bac-16s-db"
+
+
 sortmerna_fasta         =  Channel.value(params.sortmerna_fasta)
 sortmerna_index         =  Channel.value(params.sortmerna_index)
 diamond_refseq          =  Channel.value(params.diamond_refseq)
 diamond_subsys_db       =  Channel.value(params.diamond_subsys_db)
 RefSeq_db               =  Channel.value(params.RefSeq_db)
 Subsys_db               =  Channel.value(params.Subsys_db)
+params.diamond_only     =  true
 
+
+if(! params.diamond_only ){
 
 Channel.fromFilePairs(params.INPUT_DIR)
            .ifEmpty{ error "Could not locate pair reads: ${params.INPUT_DIR}"}
            .into{reads1; reads2}
-
 
 
 process trimmomatic{
@@ -123,7 +133,7 @@ process pear{
 
 process  sortmerna{
 
-    echo true
+    //echo true
     cpus params.mtp_cores
     memory "${params.m_mem} GB"
     publishDir path: "${OUT_DIR}/sortmerna", mode: 'copy'
@@ -154,7 +164,17 @@ process  sortmerna{
     
 }
 
+}
 
+if (params.diamond_only ){
+
+Channel.fromPath(params.INPUT_DIR)
+           .ifEmpty{ error "Could not metranscriptome reads : ${params.INPUT_DIR}"}
+           .into{get_pair_id; metatranscriptome_reads1; metatranscriptome_reads2}
+	   
+get_pair_id.map{it.baseName}.into{pair_id1; pair_id2}
+
+}
 
 
 process diamond_Refseq{
@@ -207,7 +227,6 @@ process diamond_subsys{
         val diamond_subsys_db  
         val  pair_id from pair_id2
 
-
    output:
         file("${pair_id}.daa") into subsys_daa
 	file("${pair_id}.tab") into subsys_tab
@@ -238,8 +257,7 @@ process diamond_subsys{
 
 process analysis_counter{
 
-    echo true
-    
+    //echo true
     publishDir path: "${OUT_DIR}/RefSeq_results", mode: 'copy'
     input:
        file refseq_results from refseq_tab
@@ -266,7 +284,7 @@ process analysis_counter{
 
 process analysis_counter_subsys{
 
-    echo true
+    //echo true
     cpus params.ltp_cores
     memory "${params.l_mem} GB"
     publishDir path: "${OUT_DIR}/Subsys_results", mode: 'copy'
@@ -300,25 +318,3 @@ process analysis_counter_subsys{
 """
 
 }
-
-
-
-// process DESeq{
-    
-//     echo true
-//     input:
-// 	file(org_results) from refseq_org_results.collect()
-//         file(function) from refseq_func_results.collect()
-        
-        
-
-// """
-
-//   run_DESeq_stats.R \
-//   -I \$PWD \
-//   -O RefSeq_org_DESeq_results.tab \
-//   -R ${OUT_DIR}/raw_counts.txt
- 
-
-// """
-// }
