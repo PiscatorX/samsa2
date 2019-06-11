@@ -1,7 +1,7 @@
 #!/usr/bin/env nextflow
 
-//params.INPUT_DIR        = "/home/andhlovu/Novogene/ftpdata.novogene.cn:2300/C101HW18111065/raw_data/*_RNA_{1,2}.fq.gz" 
-params.INPUT_DIR        =  "${PWD}/samsa2.Out/sortmerna/*.fastq"
+//params.INPUT_DIR      = "/home/andhlovu/Novogene/ftpdata.novogene.cn:2300/C101HW18111065/raw_data/*_RNA_{1,2}.fq.gz" 
+params.INPUT_DIR        =  "/home/drewx/Documents/subsample/*_{1,2}.fq"
 
 
 params.OUT_DIR          = "${PWD}/samsa2.Out"
@@ -28,7 +28,7 @@ diamond_refseq          =  Channel.value(params.diamond_refseq)
 diamond_subsys_db       =  Channel.value(params.diamond_subsys_db)
 RefSeq_db               =  Channel.value(params.RefSeq_db)
 Subsys_db               =  Channel.value(params.Subsys_db)
-params.diamond_only     =  true
+params.diamond_only     =  false
 
 
 if(! params.diamond_only ){
@@ -101,7 +101,7 @@ process raw_read_counter{
 
 
 
-process pear{
+process flash{
 	
     cpus params.mtp_cores
     memory "${params.m_mem} GB"
@@ -111,17 +111,17 @@ process pear{
         set pair_id, file(trimm_fwd), file(trimm_rev) from trimmmomatic_reads2
 
     output:
-         set pair_id, file("${pair_id}.assembled.fastq") into merged_reads
-         set file("${pair_id}.discarded.fastq"),  file("${pair_id}.unassembled*") into umerged_reads
-    
+         set pair_id, file("${pair_id}.extendedFrags.fastq") into merged_reads
+         set file("${pair_id}.notCombined_*")  into unmerged_reads
+
+
 """
 
-   pear \
-   -f ${trimm_fwd} \
-   -r ${trimm_rev} \
-   --memory ${params.l_mem}G \
-   --threads ${params.htp_cores} \
-   -o ${pair_id}
+   flash \
+   ${trimm_fwd} \
+   ${trimm_rev} \
+   -o ${pair_id} \
+   -t ${params.mtp_cores} 
   
 """
 
