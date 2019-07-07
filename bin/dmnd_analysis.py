@@ -38,7 +38,12 @@ class DMNDanalysis(object):
         self.ref_data = collections.defaultdict(tuple)
         ref_seqs  =  SeqIO.parse(self.fasta_ref,  "fasta")
         for seq in ref_seqs:
-            desc, organism  =  seq.description.split(" ",1)[-1].split("[")
+            try:
+                desc, organism  =  seq.description.split(" ",1)[-1].split("[", 1)
+            except ValueError:
+                desc  =  seq.description.split(" ",1)[-1]
+                organism =  ''
+
             self.ref_data[seq.id] = (desc, organism.rstrip("]") )
             
 
@@ -47,34 +52,34 @@ class DMNDanalysis(object):
         self.function = collections.defaultdict(int)
         self.taxonomy = collections.defaultdict(int)
         total = sum(self.hit_counts.values())
+        
         fname = os.path.join(self.outdir, self.prefix+'_hits.tsv')
         csv_fobj = csv.writer(open(fname , "w"), delimiter = "\t")
         csv_err_fobj = csv.writer(open(fname+'.err', 'w'), delimiter ="\t" )
-        i = 0
-        
+        total_fname = os.path.join(self.outdir, self.prefix+'_totals.tsv')
+        self.obj_totals = csv.writer(open(total_fname, "w"), delimiter = "\t")
+     
         for hit in self.sorted_hits:
             count =  self.hit_counts[hit]
             perc = round(100* count/float(total), 4)
             annotation  = self.ref_data[hit]
             if annotation:
                 desc, organism = annotation
-                self.function[desc] += 1
-                self.taxonomy[organism] += 1
+                self.function[desc] += count
+                self.taxonomy[organism] += count
                 row  = [count, perc, hit, organism,desc]
                 csv_fobj.writerow(row)
-                if i <= 9:
-                    #print("\t".join(map(str,  row)))
-                    i += 1
             else:
                 csv_err_fobj.writerow([count, perc, hit, None,None])
 
                 
     def analyse(self):
-
-        fname = os.path.join(self.outdir, self.prefix+'_function.tsv')
-        csv1_fobj = csv.writer(open(fname , "w"), delimiter = "\t")
+        
+        fname1 = os.path.join(self.outdir, self.prefix+'_function.tsv')
+        csv1_fobj = csv.writer(open(fname1 , "w"), delimiter = "\t")
         sum_function = sum(self.function.values())
-        for  func in sorted(self.function, self.function.get, reverse=True):
+        self.obj_totals.writerow([fname1, sum_function])
+        for  func in sorted(self.function, key=self.function.get, reverse=True):
             func_count = self.function[func]
             func_perc =  round(100 * func_count/float(sum_function),4)
             func_row = [func_count, func_perc, func]
@@ -82,10 +87,11 @@ class DMNDanalysis(object):
      
 
         
-        fname = os.path.join(self.outdir, self.prefix+'_organism.tsv')
-        csv2_fobj = csv.writer(open(fname , "w"), delimiter = "\t")
+        fname2 = os.path.join(self.outdir, self.prefix+'_organism.tsv')
+        csv2_fobj = csv.writer(open(fname2 , "w"), delimiter = "\t")
         sum_taxonomy = sum(self.taxonomy.values())
-        for organism in sorted(self.taxonomy,  self.taxonomy.get, reverse=True):
+        self.obj_totals.writerow([fname2, sum_taxonomy])
+        for organism in sorted(self.taxonomy,  key=self.taxonomy.get, reverse=True):
             org_count = self.taxonomy[organism]
             org_perc =  round(100 * org_count/float(sum_taxonomy), 4)
             org_row = [org_count, org_perc, organism]
