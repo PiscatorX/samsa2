@@ -1,25 +1,26 @@
 #!/usr/bin/env nextflow
 
-//params.INPUT_DIR      = "/home/andhlovu/Novogene/ftpdata.novogene.cn:2300/C101HW18111065/raw_data/*_RNA_{1,2}.fq.gz" 
-params.INPUT_DIR        =  "/home/drewx/Documents/subsample/*_{1,2}.fq"
+//params.INPUT_DIR    = "/home/andhlovu/Novogene/ftpdata.novogene.cn:2300/C101HW18111065/raw_data/*_RNA_{1,2}.fq.gz" 
+params.INPUT_DIR      = "/home/andhlovu/MT-samsa2_rerun/samsa2.Out/sortmerna/*.fastq"
+//params.INPUT_DIR    = "/home/drewx/Documents/subsample/*_{1,2}.fq"
 
 
 params.OUT_DIR          = "${PWD}/samsa2.Out"
 OUT_DIR                 = params.OUT_DIR
 
-// params.diamond_subsys_db= "/projects/andhlovu/DB_REF/Subsys/subsys_db.dmnd"
-// params.Subsys_db        = "/projects/andhlovu/DB_REF/Subsys/subsys_db.fa"
-// params.diamond_refseq   = "/projects/andhlovu/DB_REF/RefSeq/RefSeq_bac.dmnd"
-// params.RefSeq_db        = "/projects/andhlovu/DB_REF/RefSeq/RefSeq_bac.fa"
-//params.sortmerna_fasta  = "/projects/andhlovu/DB_REF/SILVA/SILVA_132_SSURef_Nr99_tax_silva.fasta"
-//params.sortmerna_index  = "/projects/andhlovu/DB_REF/SortMeRNA/SILVA.idx"
+params.diamond_subsys_db= "/projects/andhlovu/DB_REF/Subsys/subsys_db.dmnd"
+params.Subsys_db        = "/projects/andhlovu/DB_REF/Subsys/subsys_db.fa"
+params.diamond_refseq   = "/projects/andhlovu/DB_REF/RefSeq/RefSeq_protozoa_bacteria.dmnd"
+params.RefSeq_db        = "/projects/andhlovu/DB_REF/RefSeq/Combined_protozoa_bacteria.protein.faa"
+params.sortmerna_fasta  = "/projects/andhlovu/DB_REF/SILVA/SILVA_132_SSURef_Nr99_tax_silva.fasta"
+params.sortmerna_index  = "/projects/andhlovu/DB_REF/SortMeRNA/SILVA.idx"
 
-params.diamond_refseq	   = "/home/drewx/Documents/SAMSA-TEST/samsa2/setup_and_test/tiny_databases/RefSeq_bac_TINY_24MB"
-params.diamond_subsys_db   = "/home/drewx/Documents/SAMSA-TEST/samsa2/setup_and_test/tiny_databases/subsys_db_TINY_24MB"
-params.RefSeq_db 	   = "/home/drewx/Documents/SAMSA-TEST/samsa2/setup_and_test/tiny_databases/RefSeq_bac_TINY_24MB.fa"
-params.Subsys_db 	   = "/home/drewx/Documents/SAMSA-TEST/samsa2/setup_and_test/tiny_databases/subsys_db_TINY_24MB.fa"
-params.sortmerna_fasta     = "/home/drewx/Documents/samsa2/programs/sortmerna-2.1/rRNA_databases/silva-bac-16s-id90.fasta"
-params.sortmerna_index     = "/home/drewx/Documents/samsa2/programs/sortmerna-2.1/index/silva-bac-16s-db"
+// params.diamond_refseq	   = "/home/drewx/Documents/SAMSA-TEST/samsa2/setup_and_test/tiny_databases/RefSeq_bac_TINY_24MB"
+// params.diamond_subsys_db   = "/home/drewx/Documents/SAMSA-TEST/samsa2/setup_and_test/tiny_databases/subsys_db_TINY_24MB"
+// params.RefSeq_db 	   = "/home/drewx/Documents/SAMSA-TEST/samsa2/setup_and_test/tiny_databases/RefSeq_bac_TINY_24MB.fa"
+// params.Subsys_db 	   = "/home/drewx/Documents/SAMSA-TEST/samsa2/setup_and_test/tiny_databases/subsys_db_TINY_24MB.fa"
+// params.sortmerna_fasta     = "/home/drewx/Documents/samsa2/programs/sortmerna-2.1/rRNA_databases/silva-bac-16s-id90.fasta"
+// params.sortmerna_index     = "/home/drewx/Documents/samsa2/programs/sortmerna-2.1/index/silva-bac-16s-db"
 
 
 sortmerna_fasta         =  Channel.value(params.sortmerna_fasta)
@@ -28,7 +29,7 @@ diamond_refseq          =  Channel.value(params.diamond_refseq)
 diamond_subsys_db       =  Channel.value(params.diamond_subsys_db)
 RefSeq_db               =  Channel.value(params.RefSeq_db)
 Subsys_db               =  Channel.value(params.Subsys_db)
-params.diamond_only     =  false
+params.diamond_only     =  true
 
 
 if(! params.diamond_only ){
@@ -49,8 +50,8 @@ process trimmomatic{
 	set pair_id, file(reads) from reads1  
 
     output:
-	set pair_id, file("${pair_id}.forward"), file("${pair_id}.reverse") into  trimmmomatic_reads1
-        file("*_unpaired") into trimmed__unpaired     
+	set pair_id, file("${pair_id}_forward.fastq"), file("${pair_id}_reverse.fastq") into  trimmmomatic_reads1
+        file("*_unpaired.fastq") into trimmed__unpaired     
 
     script:
 	(fwd, rev) = reads
@@ -64,10 +65,10 @@ process trimmomatic{
     -threads ${params.htp_cores} \
     ${fwd} \
     ${rev} \
-    ${pair_id}.forward \
-    ${pair_id}.forward_unpaired \
-    ${pair_id}.reverse \
-    ${pair_id}.reverse_unpaired \
+    ${pair_id}_forward.fastq \
+    ${pair_id}_forward_unpaired.fastq \
+    ${pair_id}_reverse.fastq \
+    ${pair_id}_reverse_unpaired.fastq \
     SLIDINGWINDOW:4:15 MINLEN:70
 
 """
@@ -100,34 +101,32 @@ process raw_read_counter{
 
 
 
+process pear{
 
-process flash{
-	
     cpus params.mtp_cores
     memory "${params.m_mem} GB"
-    publishDir path: "${OUT_DIR}/pear/pair_id", mode: 'copy'
+    publishDir path: "${OUT_DIR}/pear/${pair_id}", mode: 'copy'
 
     input:
         set pair_id, file(trimm_fwd), file(trimm_rev) from trimmmomatic_reads2
 
     output:
-         set pair_id, file("${pair_id}.extendedFrags.fastq") into merged_reads
-         set file("${pair_id}.notCombined_*")  into unmerged_reads
-
+         set pair_id, file("${pair_id}.assembled.fastq") into merged_reads
+         set file("${pair_id}.discarded.fastq"),  file("${pair_id}.unassembled*") into umerged_reads
 
 """
-
-   flash \
-   ${trimm_fwd} \
-   ${trimm_rev} \
-   -o ${pair_id} \
-   -t ${params.mtp_cores} 
   
+   pear \
+   -f ${trimm_fwd} \
+   -r ${trimm_rev} \
+   --memory ${params.l_mem}G \
+   --threads ${params.htp_cores} \
+   -o ${pair_id}
+
 """
 
 
 }
-
 
 
 
@@ -201,6 +200,7 @@ process diamond_Refseq{
     -d ${diamond_refseq}  \
     -q ${query_seqs} \
     -a ${pair_id}.daa \
+    --evalue 0.00001 \
     --max-target-seqs 1 \
     --verbose
 
@@ -258,6 +258,7 @@ process diamond_subsys{
 process analysis_counter{
 
     //echo true
+    memory "${params.m_mem} GB"
     publishDir path: "${OUT_DIR}/RefSeq_results", mode: 'copy'
     input:
        file refseq_results from refseq_tab

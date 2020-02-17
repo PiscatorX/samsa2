@@ -58,7 +58,7 @@ class DMNDanalysis(object):
         csv_err_fobj = csv.writer(open(fname+'.err', 'w'), delimiter ="\t" )
         total_fname = os.path.join(self.outdir, self.prefix+'_totals.tsv')
         self.obj_totals = csv.writer(open(total_fname, "w"), delimiter = "\t")
-     
+        self.obj_totals.writerow([fname, total])
         for hit in self.sorted_hits:
             count =  self.hit_counts[hit]
             perc = round(100* count/float(total), 4)
