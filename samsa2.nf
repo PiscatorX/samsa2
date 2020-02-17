@@ -1,9 +1,7 @@
 #!/usr/bin/env nextflow
 
-//params.INPUT_DIR    = "/home/andhlovu/Novogene/ftpdata.novogene.cn:2300/C101HW18111065/raw_data/*_RNA_{1,2}.fq.gz" 
-params.INPUT_DIR      = "/home/andhlovu/MT-samsa2_rerun/samsa2.Out/sortmerna/*.fastq"
-//params.INPUT_DIR    = "/home/drewx/Documents/subsample/*_{1,2}.fq"
 
+params.INPUT_DIR	= "/home/andhlovu/MT-samsa2_rerun/samsa2.Out/sortmerna/*.fastq"
 
 params.OUT_DIR          = "${PWD}/samsa2.Out"
 OUT_DIR                 = params.OUT_DIR
@@ -14,15 +12,6 @@ params.diamond_refseq   = "/projects/andhlovu/DB_REF/RefSeq/RefSeq_protozoa_bact
 params.RefSeq_db        = "/projects/andhlovu/DB_REF/RefSeq/Combined_protozoa_bacteria.protein.faa"
 params.sortmerna_fasta  = "/projects/andhlovu/DB_REF/SILVA/SILVA_132_SSURef_Nr99_tax_silva.fasta"
 params.sortmerna_index  = "/projects/andhlovu/DB_REF/SortMeRNA/SILVA.idx"
-
-// params.diamond_refseq	   = "/home/drewx/Documents/SAMSA-TEST/samsa2/setup_and_test/tiny_databases/RefSeq_bac_TINY_24MB"
-// params.diamond_subsys_db   = "/home/drewx/Documents/SAMSA-TEST/samsa2/setup_and_test/tiny_databases/subsys_db_TINY_24MB"
-// params.RefSeq_db 	   = "/home/drewx/Documents/SAMSA-TEST/samsa2/setup_and_test/tiny_databases/RefSeq_bac_TINY_24MB.fa"
-// params.Subsys_db 	   = "/home/drewx/Documents/SAMSA-TEST/samsa2/setup_and_test/tiny_databases/subsys_db_TINY_24MB.fa"
-// params.sortmerna_fasta     = "/home/drewx/Documents/samsa2/programs/sortmerna-2.1/rRNA_databases/silva-bac-16s-id90.fasta"
-// params.sortmerna_index     = "/home/drewx/Documents/samsa2/programs/sortmerna-2.1/index/silva-bac-16s-db"
-
-
 sortmerna_fasta         =  Channel.value(params.sortmerna_fasta)
 sortmerna_index         =  Channel.value(params.sortmerna_index)
 diamond_refseq          =  Channel.value(params.diamond_refseq)
